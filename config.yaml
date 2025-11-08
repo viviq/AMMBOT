@@ -1,0 +1,45 @@
+thresholds:
+  priceChangePct10m: 0.05 # 5%
+  oiChangePct10m: 0.05  # 4.5%
+  fundingRateLt: 0.01       # < 0
+symbols:
+  blacklist: []
+  whitelist: []
+sampling:
+  wsIntervalSec: 1
+  oiPollIntervalSec: 90
+  restBatchSize: 50
+  tickerPollIntervalSec: 120
+rateLimit:
+  perSymbolWindowSec: 600
+  globalWindowSec: 60
+telegram:
+  # 请勿在仓库中保存真实密钥；使用环境变量 TELEGRAM_BOT_TOKEN 注入
+  botToken: ""
+  # 建议通过环境变量 TELEGRAM_CHAT_ID（单个）或 TELEGRAM_CHAT_IDS（逗号分隔多个）注入
+  chatIds: []
+
+# 可选：基础面数据（用于消息展示市值与24小时涨跌幅）
+fundamentals:
+  BTC:
+    marketCapUSD: 1300000000000  # 约$1.3T，占位示例
+    priceChange24hPct: 0.8       # +0.8%
+    # 可选：流通数量（用于以价格估算市值）。数值需按实际更新
+    circulatingSupply: 19500000
+  ETH:
+    marketCapUSD: 450000000000   # 约$450B，占位示例
+    priceChange24hPct: -0.5      # -0.5%
+    circulatingSupply: 120000000
+  BNB:
+    # 未配置外部市值时，可用：流通数量 × 价格 估算
+    circulatingSupply: 150000000
+
+# 外部实时基础面采集（CoinGecko）
+fundamentalsApi:
+  provider: cmc
+  pollIntervalSec: 300
+  # 不要在仓库中保存密钥，使用环境变量 CMC_API_KEY
+  apiKey: ""
+  # 可选：若某些符号在CMC用不同代号，可在此覆盖
+  cmcSymbols:
+    BNB: BNB

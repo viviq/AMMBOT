@@ -66,6 +66,14 @@ export function startFundamentalsPolling(
       logger.warn('CMC API key missing');
       return { stop: () => void 0 };
     }
+    // 允许通过环境变量切换 CMC 的 API 基地址（支持 sandbox 与 pro）
+    const cmcBase = process.env.CMC_BASE_URL || 'https://pro-api.coinmarketcap.com';
+    // 去除密钥中的不可见空白字符，避免因尾随空格/换行导致 401
+    const cmcApiKey = String(api.apiKey).trim().replace(/\s+/g, '');
+    if (!/^[a-fA-F0-9]{32}$/.test(cmcApiKey)) {
+      // 不阻断，仅提示格式可疑（例如长度不为32或含非十六进制字符）
+      logger.warn({ keyLen: cmcApiKey.length }, 'CMC API key format looks suspicious');
+    }
     const symOverride = api.cmcSymbols || {};
     const tokensEff = tokens.length > 0 ? tokens : Object.keys(symOverride);
     const symbolsRaw = tokensEff.map((t) => symOverride[t] || t);
@@ -86,12 +94,16 @@ export function startFundamentalsPolling(
       try {
         const chunks = chunk(symbols, 100);
         for (const ch of chunks) {
-          const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${encodeURIComponent(ch.join(','))}&convert=USD`;
+          const url = `${cmcBase}/v1/cryptocurrency/quotes/latest?symbol=${encodeURIComponent(ch.join(','))}&convert=USD`;
           const res = await fetch(url, {
             cache: 'no-store',
-            headers: { 'X-CMC_PRO_API_KEY': api.apiKey!, Accept: 'application/json' }
+            headers: { 'X-CMC_PRO_API_KEY': cmcApiKey, Accept: 'application/json' }
           });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          if (!res.ok) {
+            let body = '';
+            try { body = await res.text(); } catch {}
+            throw new Error(`HTTP ${res.status} ${body.slice(0, 200)}`);
+          }
           const json = (await res.json()) as {
             data?: Record<string, {
               symbol?: string;
@@ -117,7 +129,7 @@ export function startFundamentalsPolling(
     const intervalMs = (api.pollIntervalSec ?? 300) * 1000;
     const timer = setInterval(poll, intervalMs);
     void poll();
-    logger.info({ provider: api.provider, tokens: tokensEff, intervalMs }, 'Fundamentals polling started');
+    logger.info({ provider: api.provider, base: cmcBase, tokens: tokensEff, intervalMs, keyLen: cmcApiKey.length }, 'Fundamentals polling started');
     return { stop: () => clearInterval(timer) };
   }
 

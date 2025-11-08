@@ -87,11 +87,21 @@ export function startFundamentalsPolling(
         const chunks = chunk(symbols, 100);
         for (const ch of chunks) {
           const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${encodeURIComponent(ch.join(','))}&convert=USD`;
+          logger.info({
+            symbolCount: ch.length,
+            symbols: ch.slice(0, 5).join(',') + (ch.length > 5 ? '...' : ''),
+            apiKeyLength: api.apiKey?.length,
+            apiKeyPrefix: api.apiKey?.substring(0, 8)
+          }, 'CMC API request');
           const res = await fetch(url, {
             cache: 'no-store',
             headers: { 'X-CMC_PRO_API_KEY': api.apiKey!, Accept: 'application/json' }
           });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          if (!res.ok) {
+            const errorBody = await res.text().catch(() => 'Unable to read response');
+            logger.error({ status: res.status, body: errorBody }, 'CMC API error response');
+            throw new Error(`HTTP ${res.status}`);
+          }
           const json = (await res.json()) as {
             data?: Record<string, {
               symbol?: string;

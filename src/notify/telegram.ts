@@ -1,5 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { AppConfig, DecisionResult } from '../types.js';
+import { cmcSlugCache } from '../cmcSlugCache.js';
 
 /**
  * 构造告警消息文本
@@ -25,36 +26,6 @@ function tokenFromSymbol(symbol: string): string {
   return symbol;
 }
 
-/**
- * 生成 CoinMarketCap URL
- */
-function getCmcUrl(token: string): string {
-  // 常见币种的 CMC slug 映射
-  const slugMap: Record<string, string> = {
-    BTC: 'bitcoin',
-    ETH: 'ethereum',
-    BNB: 'bnb',
-    XRP: 'xrp',
-    ADA: 'cardano',
-    SOL: 'solana',
-    DOGE: 'dogecoin',
-    DOT: 'polkadot',
-    MATIC: 'polygon',
-    LTC: 'litecoin',
-    SHIB: 'shiba-inu',
-    TRX: 'tron',
-    AVAX: 'avalanche',
-    UNI: 'uniswap',
-    LINK: 'chainlink',
-    ATOM: 'cosmos',
-    BCH: 'bitcoin-cash',
-    ETC: 'ethereum-classic',
-    XLM: 'stellar',
-    FIL: 'filecoin'
-  };
-  const slug = slugMap[token] || token.toLowerCase();
-  return `https://coinmarketcap.com/currencies/${slug}/`;
-}
 
 /**
  * 生成币安期货交易页面 URL
@@ -113,7 +84,7 @@ export async function sendTelegram(cfg: AppConfig, d: DecisionResult): Promise<v
   const inlineKeyboard = {
     inline_keyboard: [
       [
-        { text: 'CMC', url: getCmcUrl(token) },
+        { text: 'CMC', url: cmcSlugCache.getCmcUrl(token) },
         { text: 'BINANCE', url: getBinanceUrl(d.symbol) }
       ]
     ]

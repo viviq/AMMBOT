@@ -1,4 +1,5 @@
 import TelegramBot from 'node-telegram-bot-api';
+import { cmcSlugCache } from '../cmcSlugCache.js';
 /**
  * 构造告警消息文本
  */
@@ -23,6 +24,12 @@ function tokenFromSymbol(symbol) {
             return symbol.slice(0, -b.length);
     }
     return symbol;
+}
+/**
+ * 生成币安期货交易页面 URL
+ */
+function getBinanceUrl(symbol) {
+    return `https://www.binance.com/en/futures/${symbol}`;
 }
 export function formatMessage(d) {
     const f = d.features;
@@ -57,10 +64,20 @@ export function formatMessage(d) {
     return lines.join('\n');
 }
 /**
- * 发送Telegram通知
+ * 发送Telegram通知（带有 CMC 和 Binance 按钮）
  */
 export async function sendTelegram(cfg, d) {
     const bot = new TelegramBot(cfg.telegram.botToken);
     const text = formatMessage(d);
-    await Promise.all(cfg.telegram.chatIds.map(async (chatId) => bot.sendMessage(chatId, text)));
+    const token = tokenFromSymbol(d.symbol);
+    // 创建内联键盘按钮
+    const inlineKeyboard = {
+        inline_keyboard: [
+            [
+                { text: 'CMC', url: cmcSlugCache.getCmcUrl(token) },
+                { text: 'BINANCE', url: getBinanceUrl(d.symbol) }
+            ]
+        ]
+    };
+    await Promise.all(cfg.telegram.chatIds.map(async (chatId) => bot.sendMessage(chatId, text, { reply_markup: inlineKeyboard })));
 }

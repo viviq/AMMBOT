@@ -7,9 +7,12 @@ import { evaluateRules } from './rules.js';
 import { sendTelegram } from './notify/telegram.js';
 import { createServer } from './server.js';
 import { startFundamentalsPolling } from './fundamentals.js';
+import { cmcSlugCache } from './cmcSlugCache.js';
 async function main() {
     const cfg = loadConfig('config.yaml');
     const agg = new FeatureAggregator(10);
+    // 初始化 CMC slug 缓存（用于 Telegram 消息中的 CMC 链接）
+    await cmcSlugCache.initialize(cfg.fundamentalsApi?.apiKey, 24);
     // 简易限频与去重：按symbol与全局窗口抑制重复告警
     const lastSentPerSymbol = new Map();
     let lastGlobalSent = 0;

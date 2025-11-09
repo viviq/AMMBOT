@@ -29,14 +29,12 @@ export function loadConfig(path = 'config.yaml') {
         fapi.apiKey = process.env.CMC_API_KEY;
         cfg.fundamentalsApi = fapi;
     }
-    // 打印配置时遮蔽敏感信息
+    // 打印配置时遮蔽敏感信息（使用深拷贝避免修改原始对象）
     const redactedCfg = {
         ...cfg,
-        telegram: { ...cfg.telegram, botToken: '***' }
+        telegram: { ...cfg.telegram, botToken: '***' },
+        fundamentalsApi: cfg.fundamentalsApi ? { ...cfg.fundamentalsApi, apiKey: '***' } : undefined
     };
-    if (redactedCfg.fundamentalsApi?.apiKey) {
-        redactedCfg.fundamentalsApi.apiKey = '***';
-    }
     logger.info({ cfg: redactedCfg }, 'Config loaded');
     return cfg;
 }

@@ -1,6 +1,6 @@
 thresholds:
   priceChangePct10m: 0.05 # 5%
-  oiChangePct10m: 0.05  # 4.5%
+  oiChangePct10m: 0.08  # 4.5%
   fundingRateLt: 0.01       # < 0
 symbols:
   blacklist: []

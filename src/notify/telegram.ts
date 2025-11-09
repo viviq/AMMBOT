@@ -25,6 +25,44 @@ function tokenFromSymbol(symbol: string): string {
   return symbol;
 }
 
+/**
+ * 生成 CoinMarketCap URL
+ */
+function getCmcUrl(token: string): string {
+  // 常见币种的 CMC slug 映射
+  const slugMap: Record<string, string> = {
+    BTC: 'bitcoin',
+    ETH: 'ethereum',
+    BNB: 'bnb',
+    XRP: 'xrp',
+    ADA: 'cardano',
+    SOL: 'solana',
+    DOGE: 'dogecoin',
+    DOT: 'polkadot',
+    MATIC: 'polygon',
+    LTC: 'litecoin',
+    SHIB: 'shiba-inu',
+    TRX: 'tron',
+    AVAX: 'avalanche',
+    UNI: 'uniswap',
+    LINK: 'chainlink',
+    ATOM: 'cosmos',
+    BCH: 'bitcoin-cash',
+    ETC: 'ethereum-classic',
+    XLM: 'stellar',
+    FIL: 'filecoin'
+  };
+  const slug = slugMap[token] || token.toLowerCase();
+  return `https://coinmarketcap.com/currencies/${slug}/`;
+}
+
+/**
+ * 生成币安期货交易页面 URL
+ */
+function getBinanceUrl(symbol: string): string {
+  return `https://www.binance.com/en/futures/${symbol}`;
+}
+
 export function formatMessage(d: DecisionResult): string {
   const f = d.features;
   const secs = f.windowSeconds ?? 600;
@@ -64,10 +102,26 @@ export function formatMessage(d: DecisionResult): string {
 }
 
 /**
- * 发送Telegram通知
+ * 发送Telegram通知（带有 CMC 和 Binance 按钮）
  */
 export async function sendTelegram(cfg: AppConfig, d: DecisionResult): Promise<void> {
   const bot = new TelegramBot(cfg.telegram.botToken);
   const text = formatMessage(d);
-  await Promise.all(cfg.telegram.chatIds.map(async (chatId) => bot.sendMessage(chatId, text)));
+  const token = tokenFromSymbol(d.symbol);
+
+  // 创建内联键盘按钮
+  const inlineKeyboard = {
+    inline_keyboard: [
+      [
+        { text: 'CMC', url: getCmcUrl(token) },
+        { text: 'BINANCE', url: getBinanceUrl(d.symbol) }
+      ]
+    ]
+  };
+
+  await Promise.all(
+    cfg.telegram.chatIds.map(async (chatId) =>
+      bot.sendMessage(chatId, text, { reply_markup: inlineKeyboard })
+    )
+  );
 }
